@@ -25,6 +25,7 @@ import { FhirRepository } from '../repo';
 export interface GraphQLContext {
   repo: FhirRepository;
   dataLoader: DataLoader<Reference, Resource>;
+  searchDataLoaders: Record<string, DataLoader<Filter, Resource[]>>;
 }
 
 export const typeCache: Record<string, GraphQLScalarType | undefined> = {
@@ -58,7 +59,11 @@ export const typeCache: Record<string, GraphQLScalarType | undefined> = {
   'http://hl7.org/fhirpath/System.Time': GraphQLString,
 };
 
-export function parseSearchArgs(resourceType: ResourceType, source: any, args: Record<string, string>): SearchRequest {
+export function parseSearchArgsWithReference(
+  resourceType: ResourceType,
+  source: any,
+  args: Record<string, string>
+): [SearchRequest, Filter | undefined] {
   let referenceFilter: Filter | undefined = undefined;
   if (source) {
     // _reference is a required field for reverse lookup searches
@@ -77,12 +82,21 @@ export function parseSearchArgs(resourceType: ResourceType, source: any, args: R
 
   // Parse the search request
   const searchRequest = parseSearchRequest(resourceType, args);
+  return [searchRequest, referenceFilter];
+}
+
+function addFilter(searchRequest: SearchRequest, filter: Filter): void {
+  const existingFilters = searchRequest.filters || [];
+  searchRequest.filters = [filter, ...existingFilters];
+}
+
+export function parseSearchArgs(resourceType: ResourceType, source: any, args: Record<string, string>): SearchRequest {
+  const [searchRequest, referenceFilter] = parseSearchArgsWithReference(resourceType, source, args);
 
   // If a reverse lookup filter was specified,
   // add it to the search request.
   if (referenceFilter) {
-    const existingFilters = searchRequest.filters || [];
-    searchRequest.filters = [referenceFilter, ...existingFilters];
+    addFilter(searchRequest, referenceFilter);
   }
 
   return searchRequest;
@@ -94,6 +108,22 @@ export function graphQLFieldToFhirParam(code: string): string {
 
 export function fhirParamToGraphQLField(code: string): string {
   return code.replaceAll('-', '_');
+}
+
+function sortedStringify(obj: any): string {
+  const customReplacer = (key: any, value: any): any => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return Object.keys(value)
+        .sort()
+        .reduce((sorted: any, key: string) => {
+          sorted[key] = value[key];
+          return sorted;
+        }, {});
+    }
+    return value;
+  };
+
+  return JSON.stringify(obj, customReplacer);
 }
 
 /**
@@ -114,9 +144,33 @@ export async function resolveBySearch(
 ): Promise<Resource[] | undefined> {
   const fieldName = info.fieldName;
   const resourceType = fieldName.substring(0, fieldName.length - 'List'.length) as ResourceType;
-  const searchRequest = parseSearchArgs(resourceType, source, args);
-  const bundle = await ctx.repo.search(searchRequest);
-  return bundle.entry?.map((e) => e.resource as Resource);
+
+  const [searchRequest, referenceFilter] = parseSearchArgsWithReference(resourceType, source, args);
+  if (!referenceFilter) {
+    const bundle = await ctx.repo.search(searchRequest);
+    return bundle.entry?.map((e) => e.resource as Resource);
+  }
+  const hash = sortedStringify(searchRequest);
+  console.log(hash, hash in ctx.searchDataLoaders);
+  const dl = (ctx.searchDataLoaders[hash] ??= new DataLoader<Filter, Resource[]>(async (filters) => {
+    console.log(`IN THE DL w/ ${filters.length} values`);
+
+    const combinedFilter: Filter = { ...filters[0] };
+    combinedFilter.operator = Operator.IN;
+    combinedFilter.value = filters.map((f) => `${f.value}`).join(',');
+    addFilter(searchRequest, combinedFilter);
+    console.log('COMBINED:\n', JSON.stringify(searchRequest, null, 2));
+    const bundle = await ctx.repo.search(searchRequest);
+    console.log('BUNDLE:\n', JSON.stringify(bundle, null, 2));
+
+    return Promise.all(
+      filters.map((_f) => {
+        return [];
+      })
+    );
+  }));
+  // const dataLoader = new DataLoader<Reference, Resource>((keys) => repo.readReferences(keys));
+  return (await dl.load(referenceFilter)) as any;
 }
 
 export function buildSearchArgs(resourceType: string): GraphQLFieldConfigArgumentMap {

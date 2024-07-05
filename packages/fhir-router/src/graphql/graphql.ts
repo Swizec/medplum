@@ -122,7 +122,7 @@ export async function graphqlHandler(
     result = await execute({
       schema,
       document,
-      contextValue: { repo, dataLoader },
+      contextValue: { repo, dataLoader, searchDataLoaders: Object.create(null) },
       operationName,
       variableValues: variables,
     });
