@@ -6,10 +6,10 @@ import {
   loadDataType,
   tryGetProfile,
 } from '@medplum/core';
-import { assignValuesIntoSlices, prepareSlices } from './ResourceArrayInput.utils';
-import { MockClient } from '@medplum/mock';
-import { StructureDefinition } from '@medplum/fhirtypes';
 import { readJson } from '@medplum/definitions';
+import { StructureDefinition } from '@medplum/fhirtypes';
+import { MockClient } from '@medplum/mock';
+import { assignValuesIntoSlices, prepareSlices } from './ResourceArrayInput.utils';
 
 const medplum = new MockClient();
 
@@ -105,6 +105,8 @@ describe('assignValuesIntoSlices', () => {
         medplum,
         property,
       });
+
+      console.log('CODY slices', JSON.stringify(slices, null, 2));
 
       expect(slices.length).toBe(4);
       const slicedValues = assignValuesIntoSlices(

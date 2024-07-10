@@ -19,8 +19,8 @@ describe('FHIR Mapper transform', () => {
     // that have the same definition, a single element with the same name and the same primitive type.
 
     const map = `
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-left" as source
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-right" as target
+      uses "http://hl7.org/fhir/StructureDefinition/TLeft" as source
+      uses "http://hl7.org/fhir/StructureDefinition/TRight" as target
 
       group tutorial(source src : TLeft, target tgt : TRight) {
         src.a as a -> tgt.a = a "rule_a";
@@ -38,8 +38,8 @@ describe('FHIR Mapper transform', () => {
     // Now consider the case where the elements have different names.
 
     const map = `
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-left" as source
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-right" as target
+      uses "http://hl7.org/fhir/StructureDefinition/TLeft" as source
+      uses "http://hl7.org/fhir/StructureDefinition/TRight" as target
 
       group tutorial(source src : TLeft, target tgt : TRight) {
         src.a1 as b -> tgt.a2 = b;
@@ -56,8 +56,8 @@ describe('FHIR Mapper transform', () => {
     // https://build.fhir.org/mapping-tutorial.html#step3
 
     const map = `
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-left" as source
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-right" as target
+      uses "http://hl7.org/fhir/StructureDefinition/TLeft" as source
+      uses "http://hl7.org/fhir/StructureDefinition/TRight" as target
 
       group tutorial(source src : TLeft, target tgt : TRight) {
         src.a2 as a -> tgt.a2 = truncate(a, 3); // just cut it off at 3 characters
@@ -74,8 +74,8 @@ describe('FHIR Mapper transform', () => {
     // https://build.fhir.org/mapping-tutorial.html#step3
 
     const map = `
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-left" as source
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-right" as target
+      uses "http://hl7.org/fhir/StructureDefinition/TLeft" as source
+      uses "http://hl7.org/fhir/StructureDefinition/TRight" as target
 
       group tutorial(source src : TLeft, target tgt : TRight) {
         src.a2 as a where a2.length() <= 3 -> tgt.a2 = a; // ignore it
@@ -97,8 +97,8 @@ describe('FHIR Mapper transform', () => {
     // https://build.fhir.org/mapping-tutorial.html#step3
 
     const map = `
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-left" as source
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-right" as target
+      uses "http://hl7.org/fhir/StructureDefinition/TLeft" as source
+      uses "http://hl7.org/fhir/StructureDefinition/TRight" as target
 
       group tutorial(source src : TLeft, target tgt : TRight) {
         src.a2 as a check a2.length() <= 3 -> tgt.a2 = a; // error if it's longer than 20 characters
@@ -125,8 +125,8 @@ describe('FHIR Mapper transform', () => {
     // in this case from a string to an integer.
 
     const map = `
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-left" as source
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-right" as target
+      uses "http://hl7.org/fhir/StructureDefinition/TLeft" as source
+      uses "http://hl7.org/fhir/StructureDefinition/TRight" as target
 
       group tutorial(source src : TLeft, target tgt : TRight) {
         src.a3 as a -> tgt.a3 = 123;
@@ -145,8 +145,8 @@ describe('FHIR Mapper transform', () => {
     // but in this case, a22 can repeat (in both source and target)
 
     const map = `
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-left" as source
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-right" as target
+      uses "http://hl7.org/fhir/StructureDefinition/TLeft" as source
+      uses "http://hl7.org/fhir/StructureDefinition/TRight" as target
 
       group tutorial(source src : TLeft, target tgt : TRight) {
         src.a22 as a -> tgt.a22 = a;
@@ -166,8 +166,8 @@ describe('FHIR Mapper transform', () => {
     // https://build.fhir.org/mapping-tutorial.html#step6
 
     const map = `
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-left" as source
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-right" as target
+      uses "http://hl7.org/fhir/StructureDefinition/TLeft" as source
+      uses "http://hl7.org/fhir/StructureDefinition/TRight" as target
 
       group tutorial(source src : TLeft, target tgt : TRight) {
         src.a23 only_one as a -> tgt.a23 = a;  // transform engine throws an error if there is more than one
@@ -187,8 +187,8 @@ describe('FHIR Mapper transform', () => {
     // https://build.fhir.org/mapping-tutorial.html#step6
 
     const map = `
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-left" as source
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-right" as target
+      uses "http://hl7.org/fhir/StructureDefinition/TLeft" as source
+      uses "http://hl7.org/fhir/StructureDefinition/TRight" as target
 
       group tutorial(source src : TLeft, target tgt : TRight) {
         src.a23 first as a -> tgt.a23 = a;  // Only use the first one
@@ -210,8 +210,8 @@ describe('FHIR Mapper transform', () => {
     // https://build.fhir.org/mapping-tutorial.html#step6
 
     const map = `
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-left" as source
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-right" as target
+      uses "http://hl7.org/fhir/StructureDefinition/TLeft" as source
+      uses "http://hl7.org/fhir/StructureDefinition/TRight" as target
 
       group tutorial(source src : TLeft, target tgt : TRight) {
         src.a23 not_first as a -> tgt.a23 = a;  // Process this rule for all but the first
@@ -239,8 +239,8 @@ describe('FHIR Mapper transform', () => {
     // https://build.fhir.org/mapping-tutorial.html#step6
 
     const map = `
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-left" as source
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-right" as target
+      uses "http://hl7.org/fhir/StructureDefinition/TLeft" as source
+      uses "http://hl7.org/fhir/StructureDefinition/TRight" as target
 
       group tutorial(source src : TLeft, target tgt : TRight) {
         src.a23 last as a -> tgt.a23 = a;  // Only use the last one
@@ -262,8 +262,8 @@ describe('FHIR Mapper transform', () => {
     // https://build.fhir.org/mapping-tutorial.html#step6
 
     const map = `
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-left" as source
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-right" as target
+      uses "http://hl7.org/fhir/StructureDefinition/TLeft" as source
+      uses "http://hl7.org/fhir/StructureDefinition/TRight" as target
 
       group tutorial(source src : TLeft, target tgt : TRight) {
         src.a23 not_last as a -> tgt.a23 = a;  // Process this rule for all but the last
@@ -293,8 +293,8 @@ describe('FHIR Mapper transform', () => {
     // Let's start with a simple case, where element aa contains ab:
 
     const map = `
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-left" as source
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-right" as target
+      uses "http://hl7.org/fhir/StructureDefinition/TLeft" as source
+      uses "http://hl7.org/fhir/StructureDefinition/TRight" as target
 
       group tutorial(source src : TLeft, target tgt : TRight) {
         src.aa as s_aa -> tgt.aa as t_aa then { // make aa exist
@@ -314,8 +314,8 @@ describe('FHIR Mapper transform', () => {
     // A common translation pattern is to perform a translation e.g. from one set of codes to another
 
     const map = `
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-left" as source
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-right" as target
+      uses "http://hl7.org/fhir/StructureDefinition/TLeft" as source
+      uses "http://hl7.org/fhir/StructureDefinition/TRight" as target
 
       conceptmap "uri-of-concept-map" {
         prefix s = "http://terminology.hl7.org/ValueSet/v3-AdministrativeGender"
@@ -341,8 +341,8 @@ describe('FHIR Mapper transform', () => {
     // Another common translation is where the target mapping for one element depends on the value of another element.
 
     const map = `
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-left" as source
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-right" as target
+      uses "http://hl7.org/fhir/StructureDefinition/TLeft" as source
+      uses "http://hl7.org/fhir/StructureDefinition/TRight" as target
 
       group tutorial(source src : TLeft, target tgt : TRight) {
         src.i as i where m < 2 -> tgt.j = i;
@@ -365,22 +365,22 @@ describe('FHIR Mapper transform', () => {
     // https://build.fhir.org/mapping-tutorial.html#step10
     // Many/most trees are fully and strongly typed. In these cases, the mapping language can make use of the typing system to simplify the mapping statements.
 
-    createType('TLeft', 'http://hl7.org/fhir/StructureDefinition/tutorial-left', [
+    createType('TLeft', 'http://hl7.org/fhir/StructureDefinition/TLeft', [
       { name: 'aa', type: 'TLeftInner', min: 0, max: '*' },
     ]);
-    createType('TLeftInner', 'http://hl7.org/fhir/StructureDefinition/tutorial-left-inner', [
+    createType('TLeftInner', 'http://hl7.org/fhir/StructureDefinition/TLeft-inner', [
       { name: 'ab', type: 'code', min: 0, max: '1' },
     ]);
-    createType('TRight', 'http://hl7.org/fhir/StructureDefinition/tutorial-right', [
+    createType('TRight', 'http://hl7.org/fhir/StructureDefinition/TRight', [
       { name: 'aa', type: 'TRightInner', min: 0, max: '*' },
     ]);
-    createType('TRightInner', 'http://hl7.org/fhir/StructureDefinition/tutorial-right-inner', [
+    createType('TRightInner', 'http://hl7.org/fhir/StructureDefinition/TRight-inner', [
       { name: 'ac', type: 'code', min: 0, max: '1' },
     ]);
 
     const map = `
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-left" as source
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-right" as target
+      uses "http://hl7.org/fhir/StructureDefinition/TLeft" as source
+      uses "http://hl7.org/fhir/StructureDefinition/TRight" as target
 
       group tutorial(source src : TLeft, target tgt : TRight) {
         src.aa -> tgt.aa;
@@ -403,8 +403,8 @@ describe('FHIR Mapper transform', () => {
     // The first mixes list management, and converting from a specific structure to a general structure:
 
     const map = `
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-left" as source
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-right" as target
+      uses "http://hl7.org/fhir/StructureDefinition/TLeft" as source
+      uses "http://hl7.org/fhir/StructureDefinition/TRight" as target
 
       group tutorial(source src : TLeft, target tgt : TRight) {
         src.e as s_e -> tgt.e as t_e then {
@@ -444,8 +444,8 @@ describe('FHIR Mapper transform', () => {
     // while the target puts the cardinality at the next level up:
 
     const map = `
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-left" as source
-      uses "http://hl7.org/fhir/StructureDefinition/tutorial-right" as target
+      uses "http://hl7.org/fhir/StructureDefinition/TLeft" as source
+      uses "http://hl7.org/fhir/StructureDefinition/TRight" as target
 
       group tutorial(source src : TLeft, target tgt : TRight) {
         // setting up a variable for the parent

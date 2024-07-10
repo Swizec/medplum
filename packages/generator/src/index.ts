@@ -33,6 +33,12 @@ export function main(): void {
 }
 
 function writeIndexFile(): void {
+  for (const t of Object.values(getAllDataTypes())) {
+    if (t.name === 'Quantity' || t.type === 'Quantity' || t.url?.endsWith('/Quantity')) {
+      console.log('CODY WHERE IS QUANTITY', t.name, t.type, t.url, !!t.parentType);
+    }
+  }
+
   const names = Object.values(getAllDataTypes())
     .filter((t) => t.name !== 'DomainResource' && !t.parentType && !isLowerCase(t.name.charAt(0)))
     .map((t) => t.name as string);

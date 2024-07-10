@@ -354,20 +354,20 @@ describe('FHIR resource and data type representations', () => {
   test('Indexing structure definitions related to a profile', () => {
     const profileUrl = 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-blood-pressure';
     const profileName = 'USCoreBloodPressureProfile';
+    const profileType = 'Observation';
 
     expect(isProfileLoaded(profileUrl)).toBe(false);
     expect(tryGetProfile(profileUrl)).toBeUndefined();
-    expect(tryGetDataType(profileName)).toBeUndefined();
-    expect(tryGetDataType(profileName, profileUrl)).toBeUndefined();
+    expect(tryGetDataType(profileType, profileUrl)).toBeUndefined();
 
     const sd = JSON.parse(readFileSync(resolve(__dirname, '__test__', 'us-core-blood-pressure.json'), 'utf8'));
     expect(sd.url).toEqual(profileUrl);
     expect(sd.name).toEqual(profileName);
+    expect(sd.type).toEqual(profileType);
     indexStructureDefinitionBundle([sd], profileUrl);
 
     expect(isProfileLoaded(profileUrl)).toBe(true);
     expect(tryGetProfile(profileUrl)).toBeDefined();
-    expect(tryGetDataType(profileName)).toBeUndefined(); // expect undefined since profileUrl argument not provided
-    expect(tryGetDataType(profileName, profileUrl)).toBeDefined();
+    expect(tryGetDataType(profileType, profileUrl)).toBeDefined();
   });
 });

@@ -5609,7 +5609,7 @@
       }],
       "kind" : "logical",
       "abstract" : false,
-      "type" : "http://hl7.org/fhir/uv/sql-on-fhir/StructureDefinition/ViewDefinition",
+      "type" : "ViewDefinition",
       "baseDefinition" : "http://hl7.org/fhir/StructureDefinition/Base",
       "derivation" : "specialization",
       "snapshot" : {

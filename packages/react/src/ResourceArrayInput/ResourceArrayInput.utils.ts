@@ -9,24 +9,33 @@ import {
   tryGetProfile,
 } from '@medplum/core';
 
-export function assignValuesIntoSlices(
-  values: any[],
+export function assignValuesIntoSlices<T>(
+  values: T[],
   slices: SliceDefinitionWithTypes[],
   slicing: SlicingRules | undefined,
   profileUrl: string | undefined
-): any[][] {
+): T[][] {
   if (!isPopulated(slicing?.slices)) {
     return [values];
   }
 
   // store values in an array of arrays: one for each slice plus another for non-sliced values
-  const slicedValues: any[][] = new Array(slices.length + 1);
+  const slicedValues: T[][] = new Array(slices.length + 1);
   for (let i = 0; i < slicedValues.length; i++) {
     slicedValues[i] = [];
   }
 
+  console.log(
+    'CODY available slices',
+    slices.map((s) => s.name)
+  );
+
+  console.log('CODY profileUrl', profileUrl);
+
   for (const value of values) {
     const sliceName = getValueSliceName(value, slices, slicing.discriminator, profileUrl);
+
+    console.log('CODY sliceName', sliceName);
 
     let sliceIndex = sliceName ? slices.findIndex((slice) => slice.name === sliceName) : -1;
     // -1 can come from either findIndex or the ternary else

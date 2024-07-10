@@ -142,6 +142,9 @@ function evalGroup(ctx: TransformContext, group: StructureMapGroup, input: Typed
   }
 
   for (const targetDefinition of targetDefinitions) {
+    if (!targetDefinition.type) {
+      ////console.log('CODY WARN missing target type', targetDefinition);
+    }
     const output = input[inputIndex++] ?? { type: targetDefinition.type ?? 'BackboneElement', value: {} };
     safeAssign(variables, targetDefinition.name as string, output);
     outputs.push(output);
@@ -264,10 +267,11 @@ function tryEvalShorthandRule(ctx: TransformContext, rule: StructureMapGroupRule
 
   // Ok, this is a shorthand rule.
   // Next, try to find a "types" group that matches the input and output types
-  const group = tryFindTypesGroup(ctx, rule);
+  const group = tryFindTypesGroup(ctx, sourceValue);
   if (!group) {
     // No group found, fallback to simple copy transform
     // This is commonly used for primitive types such as "string" and "code"
+    ////console.log('CODY WARN no group found', sourceValue.type);
     evalTarget(ctx, { ...rule.target[0], transform: 'copy', parameter: [{ valueId: '_' }] });
     return true;
   }
@@ -286,18 +290,10 @@ function tryEvalShorthandRule(ctx: TransformContext, rule: StructureMapGroupRule
  * Tries to find a "types" group that matches the input and output types.
  * This is used to determine the transform for a shorthand rule.
  * @param ctx - The transform context.
- * @param _rule - The FHIR Mapping rule definition.
+ * @param sourceValue - The source value.
  * @returns The matching group, if found; otherwise, undefined.
  */
-function tryFindTypesGroup(ctx: TransformContext, _rule: StructureMapGroupRule): StructureMapGroup | undefined {
-  let sourceValue = getVariable(ctx, '_');
-  if (Array.isArray(sourceValue)) {
-    sourceValue = sourceValue[0];
-  }
-  if (!sourceValue) {
-    return undefined;
-  }
-
+function tryFindTypesGroup(ctx: TransformContext, sourceValue: TypedValue): StructureMapGroup | undefined {
   let sourceType = sourceValue.type;
   if (sourceType.includes('/')) {
     // Source type can be a URL, so we need to extract the last part
@@ -453,6 +449,12 @@ function evalTarget(ctx: TransformContext, target: StructureMapGroupRuleTarget):
       case 'append':
         targetValue = evalAppend(ctx, target);
         break;
+      case 'cast':
+        targetValue = evalCast(ctx, target);
+        break;
+      case 'cc':
+        targetValue = evalCc(ctx, target);
+        break;
       case 'copy':
         targetValue = evalCopy(ctx, target);
         break;
@@ -560,6 +562,30 @@ function evalAppend(ctx: TransformContext, target: StructureMapGroupRuleTarget):
   return [{ type: 'string', value: (arg1 ?? '').toString() + (arg2 ?? '').toString() }];
 }
 
+function evalCast(ctx: TransformContext, target: StructureMapGroupRuleTarget): TypedValue[] {
+  const arg1 = resolveParameter(ctx, target.parameter?.[0])?.[0];
+  const arg2 = resolveParameter(ctx, target.parameter?.[1])?.[0]?.value;
+  if (arg2 === 'string') {
+    return [{ type: 'string', value: arg1?.value?.toString() }];
+  }
+  ////console.log('CODY WARN unknown cast target', arg1, arg2);
+  return [arg1];
+}
+
+function evalCc(ctx: TransformContext, target: StructureMapGroupRuleTarget): TypedValue[] {
+  const params = target.parameter as StructureMapGroupRuleTargetParameter[];
+  if (params.length === 2) {
+    // system and code
+    const system = resolveParameter(ctx, params[0])?.[0]?.value;
+    const code = resolveParameter(ctx, params[1])?.[0]?.value;
+    return [{ type: 'CodeableConcept', value: { coding: [{ system, code }] } }];
+  } else {
+    // text
+    const text = resolveParameter(ctx, params[0])?.[0]?.value;
+    return [{ type: 'CodeableConcept', value: { text } }];
+  }
+}
+
 /**
  * Evaluates the "copy" transform.
  *
@@ -635,8 +661,22 @@ function evalEvaluate(ctx: TransformContext, target: StructureMapGroupRuleTarget
 function evalTranslate(ctx: TransformContext, target: StructureMapGroupRuleTarget): TypedValue[] {
   const args = (target.parameter as StructureMapGroupRuleTargetParameter[]).flatMap((p) => resolveParameter(ctx, p));
   const sourceValue = args[0].value;
-  const mapUri = args[1].value;
-  const conceptMap = ctx.root.contained?.find((r) => r.resourceType === 'ConceptMap' && r.url === mapUri) as ConceptMap;
+
+  let mapUri = args[1].value;
+  if (mapUri.startsWith('#')) {
+    mapUri = mapUri.substring(1);
+  }
+
+  const conceptMap = ctx.root.contained?.find((r) => r.resourceType === 'ConceptMap' && r.url === mapUri) as
+    | ConceptMap
+    | undefined;
+  if (!conceptMap) {
+    console.log(
+      'CODY available maps:',
+      ctx.root.contained?.filter((r) => r.resourceType === 'ConceptMap')?.map((r) => (r as ConceptMap).url)
+    );
+    throw new Error('ConceptMap not found: ' + mapUri);
+  }
   // TODO: Verify whether system is actually required
   // The FHIR Mapping Language spec does not say whether it is required
   // But our current implementation requires it
