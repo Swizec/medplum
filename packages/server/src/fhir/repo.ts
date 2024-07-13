@@ -95,6 +95,7 @@ import { getFullUrl } from './response';
 import { RewriteMode, rewriteAttachments } from './rewrite';
 import { buildSearchExpression, searchByReferenceImpl, searchImpl } from './search';
 import {
+  AbstractSelectQuery,
   Condition,
   DeleteQuery,
   Disjunction,
@@ -1079,14 +1080,21 @@ export class Repository extends BaseRepository implements FhirRepository<PoolCli
     referenceField: string,
     references: string[]
   ): Promise<Record<string, T[]>> {
-    return searchByReferenceImpl<T>(this, searchRequest, referenceField, references);
+    try {
+      const result = await searchByReferenceImpl<T>(this, searchRequest, referenceField, references);
+      this.logEvent(SearchInteraction, AuditEventOutcome.Success, undefined, undefined, searchRequest);
+      return result;
+    } catch (err) {
+      this.logEvent(SearchInteraction, AuditEventOutcome.MinorFailure, err, undefined, searchRequest);
+      throw err;
+    }
   }
 
   /**
    * Adds filters to ignore soft-deleted resources.
    * @param builder - The select query builder.
    */
-  addDeletedFilter(builder: SelectQuery): void {
+  addDeletedFilter(builder: AbstractSelectQuery): void {
     builder.where('deleted', '=', false);
   }
 
@@ -1095,7 +1103,7 @@ export class Repository extends BaseRepository implements FhirRepository<PoolCli
    * @param builder - The select query builder.
    * @param resourceType - The resource type for compartments.
    */
-  addSecurityFilters(builder: SelectQuery, resourceType: string): void {
+  addSecurityFilters(builder: AbstractSelectQuery, resourceType: string): void {
     if (this.isSuperAdmin()) {
       // No compartment restrictions for admins.
       return;
@@ -1109,7 +1117,7 @@ export class Repository extends BaseRepository implements FhirRepository<PoolCli
    * Adds the "project" filter to the select query.
    * @param builder - The select query builder.
    */
-  private addProjectFilters(builder: SelectQuery): void {
+  private addProjectFilters(builder: AbstractSelectQuery): void {
     if (this.context.projects?.length) {
       builder.where('compartments', 'ARRAY_CONTAINS', this.context.projects, 'UUID[]');
     }
@@ -1117,10 +1125,10 @@ export class Repository extends BaseRepository implements FhirRepository<PoolCli
 
   /**
    * Adds access policy filters to the select query.
-   * @param builder - The select query builder.
+   * @param selectQuery - The select query builder.
    * @param resourceType - The resource type being searched.
    */
-  private addAccessPolicyFilters(builder: SelectQuery, resourceType: string): void {
+  private addAccessPolicyFilters(selectQuery: AbstractSelectQuery, resourceType: string): void {
     if (!this.context.accessPolicy?.resource) {
       return;
     }
@@ -1137,7 +1145,7 @@ export class Repository extends BaseRepository implements FhirRepository<PoolCli
         } else if (policy.criteria) {
           // Add subquery for access policy criteria.
           const searchRequest = parseSearchRequest(policy.criteria);
-          const accessPolicyExpression = buildSearchExpression(builder, searchRequest.resourceType, searchRequest);
+          const accessPolicyExpression = buildSearchExpression(selectQuery, searchRequest.resourceType, searchRequest);
           if (accessPolicyExpression) {
             expressions.push(accessPolicyExpression);
           }
@@ -1149,7 +1157,7 @@ export class Repository extends BaseRepository implements FhirRepository<PoolCli
     }
 
     if (expressions.length > 0) {
-      builder.predicate.expressions.push(new Disjunction(expressions));
+      selectQuery.predicate.expressions.push(new Disjunction(expressions));
     }
   }
 
